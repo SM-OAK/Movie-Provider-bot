@@ -76,8 +76,7 @@ MSG_ALRT = environ.get('MSG_ALRT', 'ᴍᴀɪɴᴛᴀɪɴᴇᴅ ʙʏ : ultroidxTe
 
 # IMPORTANT: Check this ID below. If it has only 12 digits after -100, it is INVALID.
 # Standard IDs are 13 digits (e.g., -1001234567890)
-LOG_CHANNEL = int(environ.get('LOG_CHANNEL', '-1003272869789')) 
-
+LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1003272869789"))
 SUPPORT_CHAT = environ.get('SUPPORT_CHAT', 'https://t.me/UltroidOfficial_chat')
 P_TTI_SHOW_OFF = is_enabled((environ.get('P_TTI_SHOW_OFF', "False")), False)
 IMDB = is_enabled((environ.get('IMDB', "False")), False)
