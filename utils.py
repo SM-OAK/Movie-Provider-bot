@@ -104,7 +104,7 @@ async def is_req_subscribed(bot, query):
 
     return False
 
-# [Previous get_poster function remains the same - lines 72-149]
+
 async def get_poster(query, bulk=False, id=False, file=None):
     if not id:
         # https://t.me/GetTGLink/4183
@@ -184,7 +184,6 @@ async def get_poster(query, bulk=False, id=False, file=None):
         'url':f'https://www.imdb.com/title/tt{movieid}'
     }
 
-# https://github.com/odysseusmax/animated-lamp/blob/2ef4730eb2b5f0596ed6d03e7b05243d93e3415b/bot/utils/broadcast.py#L37
 
 async def broadcast_messages(user_id, message):
     try:
@@ -208,6 +207,7 @@ async def broadcast_messages(user_id, message):
         logging.error(f"Broadcast error for {user_id}: {e}")
         return False, "Error"
 
+
 async def broadcast_messages_group(chat_id, message):
     try:
         kd = await message.copy(chat_id=chat_id)
@@ -226,8 +226,6 @@ async def broadcast_messages_group(chat_id, message):
         logging.error(f"Broadcast group error for {chat_id}: {e}")
         return False, "Error"
 
-# [Keeping existing helper functions - search_gagala, list_to_str, etc.]
-# I'll add them but keeping the same logic
 
 def list_to_str(k):
     if not k:
@@ -240,6 +238,7 @@ def list_to_str(k):
     else:
         return ' '.join(f'{elem}, ' for elem in k)
 
+
 def get_size(size):
     """Get size in readable format"""
     units = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB"]
@@ -251,11 +250,45 @@ def get_size(size):
     return "%.2f %s" % (size, units[i])
 
 
+# DATABASE SETTINGS FUNCTIONS
+async def get_settings(group_id: int):
+    """Get group settings from database"""
+    settings = await db.get_settings(group_id)
+    if settings is not None:
+        return settings
+    else:
+        # Return default settings if not found
+        from info import IMDB, IMDB_TEMPLATE, MELCOW_NEW_USERS, P_TTI_SHOW_OFF, SINGLE_BUTTON, SPELL_CHECK_REPLY, PROTECT_CONTENT, AUTO_DELETE, MAX_BTN, AUTO_FFILTER, SHORTLINK_API, SHORTLINK_URL, IS_SHORTLINK, TUTORIAL, IS_TUTORIAL
+        return {
+            'button': SINGLE_BUTTON,
+            'botpm': P_TTI_SHOW_OFF,
+            'file_secure': PROTECT_CONTENT,
+            'imdb': IMDB,
+            'spell_check': SPELL_CHECK_REPLY,
+            'welcome': MELCOW_NEW_USERS,
+            'auto_delete': AUTO_DELETE,
+            'auto_ffilter': AUTO_FFILTER,
+            'max_btn': MAX_BTN,
+            'template': IMDB_TEMPLATE,
+            'shortlink': SHORTLINK_URL,
+            'shortlink_api': SHORTLINK_API,
+            'is_shortlink': IS_SHORTLINK,
+            'tutorial': TUTORIAL,
+            'is_tutorial': IS_TUTORIAL
+        }
+
+
+async def save_group_settings(grp_id, key, value):
+    """Save a specific setting for a group"""
+    current_settings = await get_settings(grp_id)
+    current_settings[key] = value
+    await db.update_settings(grp_id, current_settings)
+
+
 async def check_token_status(bot, userid, token):
     user = await bot.get_users(userid)
     if not await db.is_user_exist(user.id):
         await db.add_user(user.id, user.first_name)
-        # Use safe_send_log instead of direct send_message
         await safe_send_log(bot, script.LOG_TEXT_P.format(user.id, user.mention))
     if user.id in TOKENS.keys():
         TKN = TOKENS[user.id]
@@ -268,11 +301,11 @@ async def check_token_status(bot, userid, token):
     else:
         return False
 
+
 async def get_token(bot, userid, link):
     user = await bot.get_users(userid)
     if not await db.is_user_exist(user.id):
         await db.add_user(user.id, user.first_name)
-        # Use safe_send_log instead of direct send_message
         await safe_send_log(bot, script.LOG_TEXT_P.format(user.id, user.mention))
     token = ''.join(random.choices(string.ascii_letters + string.digits, k=7))
     TOKENS[user.id] = {token: False}
@@ -280,22 +313,22 @@ async def get_token(bot, userid, link):
     shortened_verify_url = await get_verify_shorted_link(link)
     return str(shortened_verify_url)
 
+
 async def verify_user(bot, userid, token):
     user = await bot.get_users(userid)
     if not await db.is_user_exist(user.id):
         await db.add_user(user.id, user.first_name)
-        # Use safe_send_log instead of direct send_message
         await safe_send_log(bot, script.LOG_TEXT_P.format(user.id, user.mention))
     TOKENS[user.id] = {token: True}
     tz = pytz.timezone('Asia/Kolkata')
     today = date.today()
     VERIFIED[user.id] = str(today)
 
+
 async def check_verification(bot, userid):
     user = await bot.get_users(userid)
     if not await db.is_user_exist(user.id):
         await db.add_user(user.id, user.first_name)
-        # Use safe_send_log instead of direct send_message
         await safe_send_log(bot, script.LOG_TEXT_P.format(user.id, user.mention))
     tz = pytz.timezone('Asia/Kolkata')
     today = date.today()
@@ -309,6 +342,7 @@ async def check_verification(bot, userid):
             return True
     else:
         return False
+
 
 async def get_seconds(time_string):
     def extract_value_and_unit(ts):
@@ -338,20 +372,123 @@ async def get_seconds(time_string):
         return value * 86400 * 365
     else:
         return 0
+
+
+# SHORTLINK FUNCTIONS
+async def get_shortlink(chat_id, url):
+    """Get shortened link using Shortzy"""
+    settings = await get_settings(chat_id)
     
-# Placeholder for other utility functions that were truncated
-# Add the remaining functions from the original file here
-# (get_settings, save_group_settings, get_shortlink, send_all, get_cap, etc.)
+    if not settings.get('is_shortlink'):
+        return url
+        
+    shortlink_url = settings.get('shortlink', SHORTLINK_URL)
+    shortlink_api = settings.get('shortlink_api', SHORTLINK_API)
+    
+    if not shortlink_url or not shortlink_api:
+        return url
+        
+    try:
+        shortzy = Shortzy(api_key=shortlink_api, base_site=shortlink_url)
+        link = await shortzy.convert(url)
+        return link
+    except Exception as e:
+        logger.error(f"Shortlink error: {e}")
+        return url
+
+
+async def get_verify_shorted_link(link):
+    """Get shortened verification link"""
+    if not IS_SHORTLINK:
+        return link
+        
+    if not SHORTLINK_URL or not SHORTLINK_API:
+        return link
+        
+    try:
+        shortzy = Shortzy(api_key=SHORTLINK_API, base_site=SHORTLINK_URL)
+        shorted_link = await shortzy.convert(link)
+        return shorted_link
+    except Exception as e:
+        logger.error(f"Verify shortlink error: {e}")
+        return link
+
+
+async def get_tutorial(chat_id):
+    """Get tutorial link for a chat"""
+    settings = await get_settings(chat_id)
+    
+    if settings.get('is_tutorial'):
+        return settings.get('tutorial', TUTORIAL)
+    else:
+        return TUTORIAL
+
+
+# BUTTON PARSING FUNCTIONS
+def parse_buttons(text):
+    """Parse inline keyboard buttons from text"""
+    buttons = []
+    for match in BTN_URL_REGEX.finditer(text):
+        n_text = match.group(2)
+        b_type = match.group(3)
+        url = match.group(4)
+        same = match.group(5)
+        
+        if b_type == "buttonurl":
+            button = InlineKeyboardButton(text=n_text, url=url)
+        elif b_type == "buttonalert":
+            button = InlineKeyboardButton(text=n_text, callback_data=url)
+        else:
+            continue
+            
+        if same:
+            if buttons:
+                buttons[-1].append(button)
+            else:
+                buttons.append([button])
+        else:
+            buttons.append([button])
+    
+    # Remove button markup from text
+    text = BTN_URL_REGEX.sub('', text).strip()
+    
+    return text, buttons
+
+
+async def get_cap(group_id, search_text, file_id, file_name, file_size, file_caption):
+    """Get custom caption for files"""
+    settings = await get_settings(group_id)
+    template = settings.get('template', '')
+    
+    if template:
+        try:
+            caption = template.format(
+                query=search_text,
+                title=file_name,
+                size=get_size(file_size),
+                file_name=file_name,
+                file_size=get_size(file_size),
+                file_caption=file_caption if file_caption else ""
+            )
+            return caption
+        except Exception as e:
+            logger.error(f"Caption template error: {e}")
+            return file_caption if file_caption else file_name
+    else:
+        return file_caption if file_caption else file_name
+
 
 async def send_all(bot, userid, files, ident, chat_id, user_name, query):
-    settings = {}  # Placeholder - implement get_settings function
-    ENABLE_SHORTLINK = False  # Default
+    """Send all files to user"""
+    settings = await get_settings(chat_id)
+    ENABLE_SHORTLINK = settings.get('is_shortlink', IS_SHORTLINK)
     
     try:
         for file in files:
             f_caption = file.caption
             title = file.file_name
             size = get_size(file.file_size)
+            
             if CUSTOM_FILE_CAPTION:
                 try:
                     f_caption = CUSTOM_FILE_CAPTION.format(
@@ -362,6 +499,7 @@ async def send_all(bot, userid, files, ident, chat_id, user_name, query):
                 except Exception as e:
                     logger.error(f"Caption format error: {e}")
                     f_caption = f_caption
+            
             if f_caption is None:
                 f_caption = f"{title}"
             
@@ -388,4 +526,3 @@ async def send_all(bot, userid, files, ident, chat_id, user_name, query):
     except Exception as e:
         logger.error(f"Send all error: {e}")
         await query.answer('Hᴇʏ, Sᴛᴀʀᴛ Bᴏᴛ Fɪʀsᴛ Aɴᴅ Cʟɪᴄᴋ Sᴇɴᴅ Aʟʟ', show_alert=True)
-        
