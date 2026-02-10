@@ -1,4 +1,4 @@
-import re
+himport re
 from os import environ, getenv
 from Script import script 
 
@@ -78,7 +78,7 @@ MSG_ALRT = environ.get('MSG_ALRT', 'ᴍᴀɪɴᴛᴀɪɴᴇᴅ ʙʏ : ultroidxTe
 # The original ID -100377750722 appears to be incomplete/corrupted
 # Replace with your actual log channel ID (get it from @MissRose_bot or similar)
 # Format should be: -100 followed by channel ID (usually 10-13 digits total)
-LOG_CHANNEL = get_int('LOG_CHANNEL', -1003777507229)  # Set to 0 to disable, or provide correct channel ID
+LOG_CHANNEL = get_int('LOG_CHANNEL', 1003777507229)  # Set to 0 to disable, or provide correct channel ID
 
 SUPPORT_CHAT = environ.get('SUPPORT_CHAT', 'https://t.me/UltroidOfficial_chat')
 P_TTI_SHOW_OFF = is_enabled(environ.get('P_TTI_SHOW_OFF', "False"), False)
