@@ -5,17 +5,13 @@ from Script import script
 id_pattern = re.compile(r'^.\d+$')
 
 def is_enabled(value, default):
-    if isinstance(value, bool):
-        return value
+    if isinstance(value, bool): return value
     value = str(value).lower()
-    if value in ["true", "yes", "1", "enable", "y"]:
-        return True
-    elif value in ["false", "no", "0", "disable", "n"]:
-        return False
-    else:
-        return default
+    if value in ["true", "yes", "1", "enable", "y"]: return True
+    elif value in ["false", "no", "0", "disable", "n"]: return False
+    else: return default
 
-# Safe integer conversion helper
+# Safe integer conversion helper to prevent ValueError
 def get_int(key, default):
     value = environ.get(key, str(default))
     return int(value) if value and value.isdigit() else default
@@ -29,7 +25,6 @@ BOT_TOKEN = environ.get('BOT_TOKEN', "8315054483:AAFCQMkvu2J4DABjTl5c4WP8speHJkf
 # Bot settings
 CACHE_TIME = get_int('CACHE_TIME', 300)
 USE_CAPTION_FILTER = is_enabled(environ.get('USE_CAPTION_FILTER', "True"), True)
-
 PICS = (environ.get('PICS', 'https://telegra.ph/file/7703c1d3c58e36a56716e.jpg https://telegra.ph/file/74d3de58683ff6845f837.jpg https://telegra.ph/file/950a0aed988cc9d7dea9c.jpg https://telegra.ph/file/d2d2dd5a396ef56e4ee48.jpg https://telegra.ph/file/7e4bc0ed151ee13e76286.jpg https://telegra.ph/file/14eaf531bc83381a6943c.jpg https://telegra.ph/file/5e28043d27e8ef27ab3bf.jpg https://telegra.ph/file/3d18aedab92c38fbda7da.jpg')).split()
 NOR_IMG = environ.get("NOR_IMG", "https://graph.org/file/e20b5fdaf217252964202.jpg")
 MELCOW_VID = environ.get("MELCOW_VID", "https://telegra.ph/file/85d361ab4cb6511006022.mp4")
@@ -108,4 +103,4 @@ PING_INTERVAL = get_int("PING_INTERVAL", 1200)
 BANNED_CHANNELS = list(set(int(x) for x in str(getenv("BANNED_CHANNELS", "-1001987654567")).split())) 
 OWNER_USERNAME = "LazyDeveloper"
 PREMIUM_LOGS = get_int('PREMIUM_LOGS', -1002062925443)
-
+LOG_STR = "Custom Configurations loaded successfully."
