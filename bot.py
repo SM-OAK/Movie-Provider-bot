@@ -1,4 +1,3 @@
-
 import sys
 import glob
 import importlib
@@ -40,6 +39,12 @@ from lazybot import LazyPrincessBot
 from util.keepalive import ping_server
 from lazybot.clients import initialize_clients
 
+# --- SAFETY CHECK FOR MISSING VARIABLES ---
+# This prevents the "NameError" if these are missing in info.py
+ON_HEROKU = globals().get('ON_HEROKU', 'DYNO' in environ)
+PORT = globals().get('PORT', 8080)
+LOG_CHANNEL = globals().get('LOG_CHANNEL', -1003693769696)
+# ------------------------------------------
 
 ppath = "plugins/*.py"
 files = glob.glob(ppath)
@@ -64,25 +69,34 @@ async def Lazy_start():
             spec.loader.exec_module(load)
             sys.modules["plugins." + plugin_name] = load
             print("The Movie Provider Imported => " + plugin_name)
+    
+    # Fix for the NameError: ON_HEROKU
     if ON_HEROKU:
         asyncio.create_task(ping_server())
+
     b_users, b_chats = await db.get_banned()
     temp.BANNED_USERS = b_users
     temp.BANNED_CHATS = b_chats
+    
     await Media.ensure_indexes()
+    
     me = await LazyPrincessBot.get_me()
     temp.ME = me.id
     temp.U_NAME = me.username
     temp.B_NAME = me.first_name
     LazyPrincessBot.username = '@' + me.username
+    
     logging.info(f"{me.first_name} with for Pyrogram v{__version__} (Layer {layer}) started on {me.username}.")
     logging.info(LOG_STR)
     logging.info(script.LOGO)
+    
     tz = pytz.timezone('Asia/Kolkata')
     today = date.today()
     now = datetime.now(tz)
     time = now.strftime("%H:%M:%S %p")
+    
     await LazyPrincessBot.send_message(chat_id=LOG_CHANNEL, text=script.RESTART_TXT.format(today, time))
+    
     app = web.AppRunner(await web_server())
     await app.setup()
     bind_address = "0.0.0.0"
