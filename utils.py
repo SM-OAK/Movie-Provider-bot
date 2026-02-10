@@ -310,7 +310,35 @@ async def check_verification(bot, userid):
     else:
         return False
 
+async def get_seconds(time_string):
+    def extract_value_and_unit(ts):
+        value = ""
+        unit = ""
+        index = 0
+        while index < len(ts) and ts[index].isdigit():
+            value += ts[index]
+            index += 1
+        unit = ts[index:].lstrip()
+        if value:
+            value = int(value)
+        return value, unit
 
+    value, unit = extract_value_and_unit(time_string)
+    if unit == 's':
+        return value
+    elif unit == 'min':
+        return value * 60
+    elif unit == 'hour':
+        return value * 3600
+    elif unit == 'day':
+        return value * 86400
+    elif unit == 'month':
+        return value * 86400 * 30
+    elif unit == 'year':
+        return value * 86400 * 365
+    else:
+        return 0
+    
 # Placeholder for other utility functions that were truncated
 # Add the remaining functions from the original file here
 # (get_settings, save_group_settings, get_shortlink, send_all, get_cap, etc.)
